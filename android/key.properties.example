@@ -1,0 +1,6 @@
+# Release signing — copy to key.properties (never commit key.properties)
+#
+# storePassword=YOUR_KEYSTORE_PASSWORD
+# keyPassword=YOUR_KEY_PASSWORD
+# keyAlias=upload
+# storeFile=../upload-keystore.jks

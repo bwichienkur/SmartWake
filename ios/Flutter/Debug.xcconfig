@@ -1,0 +1,4 @@
+#include "Generated.xcconfig"
+
+// Set your Apple Developer Team ID for device builds:
+// DEVELOPMENT_TEAM = YOUR_TEAM_ID
