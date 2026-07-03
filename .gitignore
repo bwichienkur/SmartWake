@@ -87,3 +87,6 @@ android/upload-keystore.jks
 # Generated
 *.g.dart
 *.freezed.dart
+
+# Pulse lives in its own repository (https://github.com/bwichienkur/pulse-platform)
+pulse-platform/
