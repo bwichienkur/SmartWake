@@ -11,12 +11,14 @@ class AppConstants {
   static const int challengeCountdownSeconds = 15;
   static const int freeSleepHistoryDays = 7;
 
-  // Legal & support — host docs/ via GitHub Pages or your domain before submission.
-  // GitHub Pages example: https://YOUR_USERNAME.github.io/smart_wake/privacy.html
-  static const String privacyPolicyUrl = 'https://smartwake.app/privacy';
-  static const String termsOfServiceUrl = 'https://smartwake.app/terms';
+  // Legal & support — hosted on GitHub Pages (docs/).
+  static const String privacyPolicyUrl =
+      'https://bwichienkur.github.io/SmartWake/privacy.html';
+  static const String termsOfServiceUrl =
+      'https://bwichienkur.github.io/SmartWake/terms.html';
   static const String supportEmail = 'support@smartwake.app';
-  static const String supportUrl = 'https://smartwake.app/support';
+  static const String supportUrl =
+      'https://bwichienkur.github.io/SmartWake/support.html';
 
   // App identifiers (must match App Store Connect + Xcode)
   static const String iosBundleId = 'com.smartwake.app';
