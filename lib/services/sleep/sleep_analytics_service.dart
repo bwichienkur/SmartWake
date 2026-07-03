@@ -110,13 +110,66 @@ class SleepAnalyticsService {
     final consistency = calculateConsistency(sessions);
     if (consistency < 60) {
       insights.add(
-        SleepInsight(
+        const SleepInsight(
           title: 'Inconsistent Schedule',
           description:
               'Your bedtime varies significantly. A consistent sleep schedule '
               'can improve sleep quality by up to 30%.',
           category: 'consistency',
           priority: 3,
+        ),
+      );
+    }
+
+    final latest = sessions.first;
+    if (latest.wakeQuality != null && latest.wakeQuality! < 60) {
+      insights.add(
+        const SleepInsight(
+          title: 'Groggy Mornings',
+          description:
+              'Your recent wake quality is low. Try an earlier bedtime or '
+              'enable Smart Wake for a gentler alarm.',
+          category: 'wake_quality',
+          priority: 2,
+        ),
+      );
+    }
+
+    final smartWakeSessions =
+        sessions.where((s) => s.wasSmartWake == true).toList();
+    if (smartWakeSessions.length >= 3) {
+      final avgWakeQuality = smartWakeSessions
+              .where((s) => s.wakeQuality != null)
+              .map((s) => s.wakeQuality!)
+              .fold(0.0, (a, b) => a + b) /
+          smartWakeSessions.where((s) => s.wakeQuality != null).length;
+      if (avgWakeQuality >= 75) {
+        insights.add(
+          SleepInsight(
+            title: 'Smart Wake is working',
+            description:
+                'Your wake quality averages ${avgWakeQuality.round()}/100 on '
+                'Smart Wake days. Keep it enabled.',
+            category: 'smart_wake',
+            priority: 1,
+          ),
+        );
+      }
+    }
+
+    final avgHours = sessions
+            .map((s) => s.totalSleep.inMinutes / 60.0)
+            .reduce((a, b) => a + b) /
+        sessions.length;
+    if (avgHours < 6.5) {
+      insights.add(
+        SleepInsight(
+          title: 'Short sleep duration',
+          description:
+              'You average ${avgHours.toStringAsFixed(1)} hours. Most adults '
+              'need 7–9 hours for optimal recovery.',
+          category: 'duration',
+          priority: 2,
         ),
       );
     }

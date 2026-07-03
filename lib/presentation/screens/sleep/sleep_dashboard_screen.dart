@@ -5,14 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/constants/app_constants.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../domain/entities/sleep_confidence.dart';
 import '../../../domain/entities/sleep_session.dart';
-import '../../../domain/entities/sleep_stage.dart';
 import '../../widgets/disclaimer_banner.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/sleep_comparison_card.dart';
+import '../../widgets/sleep_insights_cards.dart';
 import '../../widgets/sleep_score_ring.dart';
 import '../../widgets/sleep_timeline.dart';
 
@@ -37,6 +37,7 @@ class _SleepDashboardScreenState extends ConsumerState<SleepDashboardScreen> {
       data: (u) => u?.isPremium ?? false,
       orElse: () => false,
     );
+    final estimate = ref.watch(sleepStageEstimatorProvider).lastEstimate;
 
     return Scaffold(
       body: CustomScrollView(
@@ -90,13 +91,28 @@ class _SleepDashboardScreenState extends ConsumerState<SleepDashboardScreen> {
               }
               final latest = list.first;
               final averages = ref.read(sleepAnalyticsProvider).compareAverages(list);
+              final showWearableCta = estimate?.confidence == SleepConfidence.low;
               return SliverList(
                 delegate: SliverChildListDelegate([
                   const SizedBox(height: 16),
+                  if (!isPremium) ...[
+                    const PremiumSmartWakeUpsell(),
+                    const SizedBox(height: 12),
+                  ],
+                  if (showWearableCta) ...[
+                    const WearableConnectCard(),
+                    const SizedBox(height: 12),
+                  ],
                   Center(
                     child: SleepScoreRing(score: latest.sleepScore ?? 75),
                   ).animate().scale(duration: 600.ms),
                   const SizedBox(height: 16),
+                  if (latest.wakeQuality != null)
+                    WakeQualityCard(
+                      score: latest.wakeQuality!,
+                      wasSmartWake: latest.wasSmartWake ?? false,
+                    ),
+                  if (latest.wakeQuality != null) const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: SleepComparisonCard(
@@ -321,7 +337,7 @@ class _InsightsSection extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('AI Insights', style: Theme.of(context).textTheme.titleLarge),
+              Text('Sleep Insights', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               ...insights.map(
                 (i) => Card(
@@ -364,11 +380,11 @@ class _PremiumInsightsTeaser extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Unlock AI Sleep Insights',
+                        'Unlock Sleep Insights',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
-                        'Get personalized recommendations with Premium',
+                        'Personalized tips from your sleep patterns',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],

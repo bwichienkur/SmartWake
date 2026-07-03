@@ -29,7 +29,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-pubspec.lock
+# Keep pubspec.lock for reproducible builds
 
 # Symbolication related
 app.*.symbols

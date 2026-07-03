@@ -9,6 +9,7 @@ import '../../data/repositories/sleep_repository_impl.dart';
 import '../../data/repositories/user_repository_impl.dart';
 import '../../domain/repositories/repositories.dart';
 import '../../services/alarm/alarm_engine.dart';
+import '../../services/alarm/alarm_readiness_service.dart';
 import '../../services/alarm/alarm_scheduler_service.dart';
 import '../../services/alarm/notification_service.dart';
 import '../../services/analytics/analytics_service.dart';
@@ -112,6 +113,14 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
 
 final alarmSchedulerProvider = Provider<AlarmSchedulerService>((ref) {
   return AlarmSchedulerService(ref.watch(notificationServiceProvider));
+});
+
+final alarmReadinessServiceProvider = Provider<AlarmReadinessService>((ref) {
+  return AlarmReadinessService();
+});
+
+final alarmReadinessProvider = FutureProvider((ref) {
+  return ref.watch(alarmReadinessServiceProvider).check();
 });
 
 final challengeStatsProvider = Provider<ChallengeStatsService>((ref) {

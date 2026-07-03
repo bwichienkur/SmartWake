@@ -6,13 +6,25 @@ import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/alarm.dart';
 import '../challenges/challenge_host.dart';
 
-class AlarmRingScreen extends ConsumerWidget {
+class AlarmRingScreen extends ConsumerStatefulWidget {
   const AlarmRingScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AlarmRingScreen> createState() => _AlarmRingScreenState();
+}
+
+class _AlarmRingScreenState extends ConsumerState<AlarmRingScreen> {
+  bool _sessionEasyMode = false;
+
+  @override
+  Widget build(BuildContext context) {
     final engine = ref.watch(alarmEngineProvider);
     final alarm = engine.activeAlarm;
+    final prefsEasy = ref.watch(userProvider).maybeWhen(
+          data: (user) => user?.preferences.easyChallengeMode ?? false,
+          orElse: () => false,
+        );
+    final easyMode = _sessionEasyMode || prefsEasy;
 
     if (alarm == null) {
       return const Scaffold(body: Center(child: Text('No active alarm')));
@@ -41,13 +53,23 @@ class AlarmRingScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 16),
-                _buildContent(context, ref, engine),
+                _buildContent(context, ref, engine, alarm, easyMode),
                 const Spacer(flex: 2),
                 if (engine.ringState == AlarmRingState.ringing ||
                     engine.ringState == AlarmRingState.countdown)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
+                      if (engine.ringState == AlarmRingState.countdown &&
+                          !prefsEasy)
+                        TextButton.icon(
+                          onPressed: () =>
+                              setState(() => _sessionEasyMode = !_sessionEasyMode),
+                          icon: Icon(
+                            easyMode ? Icons.healing : Icons.healing_outlined,
+                          ),
+                          label: Text(easyMode ? 'Easy mode on' : 'Easy mode'),
+                        ),
                       if (alarm.snoozeEnabled)
                         TextButton.icon(
                           onPressed: () => engine.snooze(),
@@ -64,7 +86,13 @@ class AlarmRingScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, dynamic engine) {
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic engine,
+    Alarm alarm,
+    bool easyMode,
+  ) {
     switch (engine.ringState as AlarmRingState) {
       case AlarmRingState.ringing:
         return Column(
@@ -95,6 +123,14 @@ class AlarmRingScreen extends ConsumerWidget {
               style: Theme.of(context).textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
+            if (easyMode)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Easy mode — simpler challenge',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
             const SizedBox(height: 32),
             FilledButton.icon(
               onPressed: () => engine.startChallenge(),
@@ -125,6 +161,7 @@ class AlarmRingScreen extends ConsumerWidget {
                 child: ChallengeHost(
                   challengeType: engine.currentChallenge!,
                   alarm: engine.activeAlarm!,
+                  easyModeOverride: easyMode,
                   onComplete: () => engine.completeChallenge(),
                 ),
               ),

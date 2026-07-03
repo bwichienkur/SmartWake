@@ -12,34 +12,36 @@ import 'services/alarm/notification_service.dart';
 import 'services/analytics/crash_reporting_service.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  await runAppGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
-  await initializeTimezones();
+    await initializeTimezones();
 
-  final storage = LocalStorageService();
-  await storage.init();
+    final storage = LocalStorageService();
+    await storage.init();
 
-  final notifications = NotificationService();
-  await notifications.init();
+    final notifications = NotificationService();
+    await notifications.init();
 
-  await initAndroidAlarmBackground();
+    await initAndroidAlarmBackground();
 
-  final crashReporting = CrashReportingService();
-  await crashReporting.init();
+    final crashReporting = CrashReportingService();
+    await crashReporting.init();
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        localStorageProvider.overrideWithValue(storage),
-      ],
-      child: const _AppBootstrap(),
-    ),
-  );
+    runApp(
+      ProviderScope(
+        overrides: [
+          localStorageProvider.overrideWithValue(storage),
+        ],
+        child: const _AppBootstrap(),
+      ),
+    );
+  });
 }
 
 class _AppBootstrap extends ConsumerStatefulWidget {

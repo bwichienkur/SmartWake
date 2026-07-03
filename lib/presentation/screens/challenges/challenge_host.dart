@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../domain/entities/alarm.dart';
+import '../../../domain/entities/challenge_config.dart';
 import '../../../domain/entities/challenge_type.dart';
 import 'challenges/barcode_challenge.dart';
 import 'challenges/math_challenge.dart';
@@ -15,18 +16,25 @@ class ChallengeHost extends ConsumerWidget {
     required this.challengeType,
     required this.alarm,
     required this.onComplete,
+    this.easyModeOverride,
   });
 
   final ChallengeType challengeType;
   final Alarm alarm;
   final VoidCallback onComplete;
+  final bool? easyModeOverride;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final easyMode = ref.watch(userProvider).maybeWhen(
+    final prefsEasy = ref.watch(userProvider).maybeWhen(
           data: (user) => user?.preferences.easyChallengeMode ?? false,
           orElse: () => false,
         );
+    final easyMode = easyModeOverride ?? prefsEasy;
+    final config = ChallengeConfig(
+      difficulty: alarm.challengeDifficulty,
+      easyMode: easyMode,
+    );
 
     final barcodeValue =
         alarm.challengeBarcodeValue ?? ref.watch(userProvider).maybeWhen(
@@ -50,14 +58,34 @@ class ChallengeHost extends ConsumerWidget {
         ),
       ChallengeType.mathProblem => MathChallenge(
           onComplete: onComplete,
-          difficulty: alarm.challengeDifficulty,
-          easyMode: easyMode,
+          difficulty: config.difficulty,
+          easyMode: config.easyMode,
         ),
-      ChallengeType.memoryGame => MemoryChallenge(onComplete: onComplete),
-      ChallengeType.patternMatch => PatternChallenge(onComplete: onComplete),
-      ChallengeType.typingChallenge => TypingChallenge(onComplete: onComplete),
-      ChallengeType.shakePhone => ShakeChallenge(onComplete: onComplete),
-      ChallengeType.stepCounter => StepsChallenge(onComplete: onComplete),
+      ChallengeType.memoryGame => MemoryChallenge(
+          onComplete: onComplete,
+          difficulty: config.difficulty,
+          easyMode: config.easyMode,
+        ),
+      ChallengeType.patternMatch => PatternChallenge(
+          onComplete: onComplete,
+          difficulty: config.difficulty,
+          easyMode: config.easyMode,
+        ),
+      ChallengeType.typingChallenge => TypingChallenge(
+          onComplete: onComplete,
+          difficulty: config.difficulty,
+          easyMode: config.easyMode,
+        ),
+      ChallengeType.shakePhone => ShakeChallenge(
+          onComplete: onComplete,
+          difficulty: config.difficulty,
+          easyMode: config.easyMode,
+        ),
+      ChallengeType.stepCounter => StepsChallenge(
+          onComplete: onComplete,
+          difficulty: config.difficulty,
+          easyMode: config.easyMode,
+        ),
       ChallengeType.brightnessDetection =>
         BrightnessChallenge(onComplete: onComplete),
       ChallengeType.faceVerification => FaceChallenge(

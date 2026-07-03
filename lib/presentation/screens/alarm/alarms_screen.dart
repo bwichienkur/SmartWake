@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/alarm.dart';
 import '../../widgets/alarm_armed_banner.dart';
 import '../../widgets/alarm_card.dart';
+import '../../widgets/alarm_readiness_card.dart';
 import '../../widgets/confidence_badge.dart';
 import '../../widgets/disclaimer_banner.dart';
 import '../../widgets/empty_state.dart';
@@ -86,6 +87,7 @@ class _AlarmsScreenState extends ConsumerState<AlarmsScreen> {
                     status: engine.getArmedStatus(list),
                     nextAlarm: engine.getNextAlarm(list),
                   ),
+                  const AlarmReadinessCard(),
                   if (estimate != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),

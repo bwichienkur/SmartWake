@@ -2,12 +2,21 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../../domain/entities/challenge_config.dart';
+import '../../../../domain/entities/challenge_difficulty.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class MemoryChallenge extends StatefulWidget {
-  const MemoryChallenge({super.key, required this.onComplete});
+  const MemoryChallenge({
+    super.key,
+    required this.onComplete,
+    this.difficulty = ChallengeDifficulty.normal,
+    this.easyMode = false,
+  });
 
   final VoidCallback onComplete;
+  final ChallengeDifficulty difficulty;
+  final bool easyMode;
 
   @override
   State<MemoryChallenge> createState() => _MemoryChallengeState();
@@ -27,7 +36,11 @@ class _MemoryChallengeState extends State<MemoryChallenge> {
   }
 
   void _startRound() {
-    _sequence = List.generate(4, (_) => Random().nextInt(4));
+    final length = ChallengeConfig(
+      difficulty: widget.difficulty,
+      easyMode: widget.easyMode,
+    ).memorySequenceLength;
+    _sequence = List.generate(length, (_) => Random().nextInt(4));
     _userInput = [];
     _showIndex = 0;
     _showing = true;
@@ -114,9 +127,16 @@ class _MemoryChallengeState extends State<MemoryChallenge> {
 }
 
 class PatternChallenge extends StatefulWidget {
-  const PatternChallenge({super.key, required this.onComplete});
+  const PatternChallenge({
+    super.key,
+    required this.onComplete,
+    this.difficulty = ChallengeDifficulty.normal,
+    this.easyMode = false,
+  });
 
   final VoidCallback onComplete;
+  final ChallengeDifficulty difficulty;
+  final bool easyMode;
 
   @override
   State<PatternChallenge> createState() => _PatternChallengeState();
@@ -129,7 +149,11 @@ class _PatternChallengeState extends State<PatternChallenge> {
   @override
   void initState() {
     super.initState();
-    _pattern = List.generate(5, (_) => Random().nextInt(9));
+    final length = ChallengeConfig(
+      difficulty: widget.difficulty,
+      easyMode: widget.easyMode,
+    ).patternLength;
+    _pattern = List.generate(length, (_) => Random().nextInt(9));
   }
 
   void _onTap(int index) {
@@ -140,7 +164,13 @@ class _PatternChallengeState extends State<PatternChallenge> {
       } else {
         setState(() {
           _selected.clear();
-          _pattern = List.generate(5, (_) => Random().nextInt(9));
+          _pattern = List.generate(
+            ChallengeConfig(
+              difficulty: widget.difficulty,
+              easyMode: widget.easyMode,
+            ).patternLength,
+            (_) => Random().nextInt(9),
+          );
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Wrong pattern. Try again.')),
@@ -196,27 +226,32 @@ class _PatternChallengeState extends State<PatternChallenge> {
 }
 
 class TypingChallenge extends StatefulWidget {
-  const TypingChallenge({super.key, required this.onComplete});
+  const TypingChallenge({
+    super.key,
+    required this.onComplete,
+    this.difficulty = ChallengeDifficulty.normal,
+    this.easyMode = false,
+  });
 
   final VoidCallback onComplete;
+  final ChallengeDifficulty difficulty;
+  final bool easyMode;
 
   @override
   State<TypingChallenge> createState() => _TypingChallengeState();
 }
 
 class _TypingChallengeState extends State<TypingChallenge> {
-  static const _phrases = [
-    'I am awake and ready',
-    'Good morning sunshine',
-    'Rise and shine today',
-  ];
   late String _phrase;
   final _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _phrase = _phrases[Random().nextInt(_phrases.length)];
+    _phrase = ChallengeConfig(
+      difficulty: widget.difficulty,
+      easyMode: widget.easyMode,
+    ).typingPhrase;
   }
 
   void _check() {
@@ -250,9 +285,16 @@ class _TypingChallengeState extends State<TypingChallenge> {
 }
 
 class StepsChallenge extends StatefulWidget {
-  const StepsChallenge({super.key, required this.onComplete});
+  const StepsChallenge({
+    super.key,
+    required this.onComplete,
+    this.difficulty = ChallengeDifficulty.normal,
+    this.easyMode = false,
+  });
 
   final VoidCallback onComplete;
+  final ChallengeDifficulty difficulty;
+  final bool easyMode;
 
   @override
   State<StepsChallenge> createState() => _StepsChallengeState();
@@ -260,7 +302,16 @@ class StepsChallenge extends StatefulWidget {
 
 class _StepsChallengeState extends State<StepsChallenge> {
   int _steps = 0;
-  static const _required = 20;
+  late int _required;
+
+  @override
+  void initState() {
+    super.initState();
+    _required = ChallengeConfig(
+      difficulty: widget.difficulty,
+      easyMode: widget.easyMode,
+    ).requiredSteps;
+  }
 
   @override
   Widget build(BuildContext context) {
