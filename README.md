@@ -1,128 +1,173 @@
-# SmartWake
+# Enterprise SMS Platform
 
-**SmartWake** is a production-ready cross-platform mobile alarm clock (Flutter) that estimates sleep stages from wearable and phone sensors, wakes you during light sleep within a Smart Wake Window, and uses wake-up challenges to ensure you're truly awake.
+A production-grade, compliance-first SMS messaging platform built with **.NET 9**, **React**, and **PostgreSQL**. Designed to address the pain points of incumbent providers (Twilio, Vonage, MessageBird) with built-in compliance, AI intelligence, multi-provider failover, and transparent architecture.
 
-> **Medical disclaimer:** Sleep stages shown are **estimates** based on sensor data. SmartWake is **not** a medical device. Consult a healthcare professional for sleep disorders.
+## Market Research & Problem Statement
+
+Analysis of leading SMS platforms reveals recurring enterprise pain points:
+
+| Pain Point | Incumbent Gap | Our Solution |
+|------------|---------------|--------------|
+| **Compliance burden** | TCPA/CTIA checks left to application code; 10DLC registration takes weeks | Compliance engine at the router layer: opt-out, quiet hours, content scanning |
+| **Unpredictable costs** | Hidden surcharges, carrier fees, premium support tiers | Per-message cost tracking, provider abstraction for competitive routing |
+| **Silent carrier filtering** | Messages blocked without clear signals | AI compliance risk scoring + content optimization before send |
+| **Poor observability** | Basic delivery logs; carrier detail requires support tickets | Full message lifecycle audit trail with typed event codes |
+| **Vendor lock-in** | Migrating providers requires re-registering campaigns, porting numbers | Provider abstraction with automatic failover (Twilio → Mock → future Vonage/Plivo) |
+| **Limited AI** | AI features siloed in premium tiers or separate products | Built-in sentiment analysis, smart routing, content studio |
+| **Scale friction** | Rate limits and queue management are DIY | RabbitMQ-backed async pipeline with worker service |
+
+## Architecture
+
+Clean Architecture with clear separation of concerns:
+
+```
+src/
+├── SmsPlatform.Domain/          # Entities, enums, business rules
+├── SmsPlatform.Application/     # Use cases, interfaces, DTOs
+├── SmsPlatform.Infrastructure/  # EF Core, Redis-ready, RabbitMQ, Twilio, AI
+├── SmsPlatform.Api/             # REST API, auth, rate limiting, Swagger
+└── SmsPlatform.Worker/          # Scheduled messages + queue consumer
+frontend/                        # React enterprise dashboard
+```
+
+### Key Design Decisions
+
+- **Compliance at the router** — Every outbound message passes through opt-out lookup, quiet-hour gating, spam detection, and rate limits before dispatch (addresses TCPA liability)
+- **Async message pipeline** — API accepts messages instantly; workers process via RabbitMQ (or in-process for dev) for fault tolerance
+- **Provider failover** — Automatic routing with health tracking; unhealthy providers circuit-break after consecutive failures
+- **AI layer** — Heuristic engine by default; optional OpenAI integration for advanced compliance analysis
+- **Multi-tenant** — Organization-scoped API keys with SHA-256 hashing
+- **Idempotency** — Duplicate send prevention via idempotency keys
 
 ## Features
 
-### Smart Alarm
-- Earliest / latest wake time (Smart Wake Window)
-- Repeat schedule, alarm sounds, volume, fade-in
-- Vibration, snooze, wake-up challenges
-- Light-sleep detection during window; fallback to latest wake time
-- Never oversleeps past latest wake time
+### Messaging
+- Send/receive SMS with delivery status webhooks
+- Message intent classification (OTP, Transactional, Marketing, etc.)
+- Priority-based routing for inbound messages
+- Idempotent send API
 
-### Alarm Flow
-1. Alarm rings and vibrates
-2. After initial alert → silence
-3. 15-second countdown to start challenge
-4. Challenge started → alarm stays silent
-5. No action → alarm resumes until challenge completed
+### Compliance (TCPA / CTIA / 10DLC-ready)
+- Automatic STOP/UNSUBSCRIBE/END keyword processing
+- Quiet hours enforcement for marketing (8 PM – 8 AM recipient local time)
+- Spam content detection with review queue
+- Campaign registry tracking
+- Compliance dashboard with block reason analytics
 
-### Wake-Up Challenges (13 types)
-Barcode Scan, QR Code, Math, Memory Game, Pattern Match, Typing, Shake Phone, Step Counter, Brightness Detection, Face Verification, Smile Detection, Sliding Puzzle, Captcha
+### AI Intelligence
+- **Outbound**: Compliance risk scoring, content optimization (auto-add opt-out language)
+- **Inbound**: Sentiment analysis, urgency detection, priority routing
+- **AI Studio**: Pre-send content analysis with issue detection and suggestions
+- Optional OpenAI/Azure OpenAI backend
 
-### Sleep Tracking
-Duration, estimated Deep/Light/REM/Awake, sleep score, consistency, efficiency, wake quality, interactive timeline, analytics (daily/weekly/monthly/yearly), AI insights (Premium), bedtime recommendations (Premium), nap mode, relaxation sounds (Premium)
+### Enterprise Operations
+- Provider health monitoring with success rates
+- Rate limiting per organization (100 req/min default)
+- Structured audit events per message
+- Correlation ID tracing
+- Swagger/OpenAPI documentation
 
-### Architecture
-- **MVVM** with Riverpod
-- **Repository Pattern** for data access
-- **Dependency Injection** via Riverpod providers
-- **Offline-first** with Hive + AES encryption (keys in flutter_secure_storage)
-- **Cloud sync** support (optional account)
-- Modular `lib/` structure
-
-## Project Structure
-
-```
-lib/
-├── main.dart / app.dart
-├── core/           # Constants, DI, router, theme, utils
-├── domain/         # Entities, repository interfaces, use cases
-├── data/           # Models, datasources, repository implementations
-├── services/       # Alarm engine, sleep, health, subscription, sync
-└── presentation/   # Screens, widgets, viewmodels
-```
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
-- Flutter 3.2+ ([install guide](https://docs.flutter.dev/get-started/install))
-- Xcode (iOS) / Android Studio (Android)
-- Firebase project (optional, for auth)
-- App Store Connect / Google Play Console (subscriptions)
+- [.NET 9 SDK](https://dotnet.microsoft.com/download)
+- [Node.js 18+](https://nodejs.org/)
+- PostgreSQL 16+ (optional — SQLite used by default for dev)
+- RabbitMQ (optional — in-process queue used when not configured)
 
-### Setup
-
-```bash
-cd smart_wake
-flutter pub get
-flutter run
-```
-
-### Run Tests
+### 1. Clone and configure
 
 ```bash
-flutter test
-flutter test integration_test/
+git clone <repo-url>
+cd sms-application
+cp .env.example .env
 ```
 
-## Monetization
+### 2. Run the API
 
-| Feature | Free | Premium ($4.99/mo · $39.99/yr) |
-|---------|------|--------------------------------|
-| Alarms | Unlimited | Unlimited |
-| Smart Wake window | Up to 15 min | Up to 90 min |
-| Sleep history | 7 days | Unlimited |
-| Challenges | Math, Shake, Barcode | All 13 + sequences |
-| AI insights | — | ✓ |
-| Cloud backup | — | ✓ |
+```bash
+export PATH="$HOME/.dotnet:$PATH"
+cd src/SmsPlatform.Api
+dotnet run
+```
 
-Upgrade prompts appear **only** when accessing premium features — never during an active alarm.
+On first run, a demo API key is printed to the console. Copy it.
 
-## Platform Configuration
+### 3. Run the dashboard
 
-### iOS
-- HealthKit entitlements in Xcode
-- In-App Purchase capability
-- Background modes: audio, fetch, processing
-- See `ios/Runner/Info.plist` for permission strings
+```bash
+cd frontend
+cp .env.example .env
+# Set VITE_API_KEY to your demo API key
+npm install
+npm run dev
+```
 
-### Android
-- Health Connect permissions in `AndroidManifest.xml`
-- Exact alarm permission (Android 12+)
-- Boot receiver for alarm persistence
-- Battery optimization exemption recommended
+- **API**: http://localhost:5000 (or port shown in console)
+- **Swagger**: http://localhost:5000/swagger
+- **Dashboard**: http://localhost:5173
 
-## Health & Wearable Integration
+### 4. Send a test message
 
-| Platform | Integration |
+```bash
+curl -X POST http://localhost:5000/api/messages/send \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: YOUR_API_KEY" \
+  -d '{"to": "+15559876543", "body": "Hello from Enterprise SMS Platform!", "enableAiOptimization": true}'
+```
+
+## Configuration
+
+| Variable | Description |
 |----------|-------------|
-| iOS | Apple Health / HealthKit, Apple Watch |
-| Android | Health Connect, Wear OS |
-| Fallback | Phone accelerometer, gyroscope |
+| `UseSqlite` | `true` for SQLite (dev), `false` for PostgreSQL |
+| `ConnectionStrings:DefaultConnection` | PostgreSQL connection string |
+| `Twilio:AccountSid` | Twilio account SID (optional — mock provider used if empty) |
+| `Twilio:AuthToken` | Twilio auth token |
+| `Twilio:FromNumber` | Sender phone number |
+| `Intelligence:Provider` | `Heuristic` or `OpenAI` |
+| `Intelligence:OpenAiApiKey` | OpenAI API key for advanced AI |
+| `RabbitMQ:Host` | RabbitMQ host (empty = in-process queue) |
 
-When no wearable is connected, SmartWake falls back to phone sensors automatically.
+## API Reference
 
-## Background Alarms
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/messages/send` | Queue outbound SMS |
+| GET | `/api/messages` | List messages (paginated) |
+| GET | `/api/analytics/stats` | Dashboard statistics |
+| GET | `/api/analytics/compliance` | Compliance report |
+| GET | `/api/analytics/providers` | Provider health status |
+| POST | `/api/ai/analyze` | AI content analysis |
+| GET/POST/DELETE | `/api/contacts` | Contact management |
+| POST | `/api/webhooks/twilio/incoming` | Inbound SMS webhook |
+| POST | `/api/webhooks/twilio/status` | Delivery status callback |
 
-Uses `flutter_local_notifications` + `android_alarm_manager_plus` with boot/timezone receivers. Platform limitations apply — users should disable battery optimization for reliable alarms.
+All endpoints require `X-Api-Key` header except webhooks and health checks.
 
-## App Store & Play Store Submission
+## Docker (Production)
 
-**Start here:** [`docs/APP_STORE_SUBMISSION.md`](docs/APP_STORE_SUBMISSION.md) — complete step-by-step checklist.
+```bash
+docker compose up --build
+```
 
-Quick reference:
-- **Bundle ID:** `com.smartwake.app`
-- **IAP products:** `smartwake_premium_monthly`, `smartwake_premium_yearly`
-- **Build script (Mac):** `bash scripts/build_app_store.sh`
-- **Metadata copy:** `store/app_store/metadata.md`
-- **Privacy policy template:** `store/legal/PRIVACY_POLICY.md`
+Services: PostgreSQL, Redis, RabbitMQ, API, Worker, Frontend.
 
-> iOS builds require a **Mac with Xcode**. Windows can develop and test logic; archive/upload happens on macOS.
+## Tests
+
+```bash
+export PATH="$HOME/.dotnet:$PATH"
+dotnet test
+```
+
+## Scaling Considerations
+
+- **Horizontal API scaling** — Stateless API behind load balancer
+- **Worker scaling** — Multiple worker instances consume RabbitMQ queue
+- **Database** — PostgreSQL with read replicas for analytics
+- **Caching** — Redis integration point for rate limits and opt-out lookups
+- **Provider pool** — Add Vonage/Plivo adapters implementing `ISmsProvider`
 
 ## License
 
-Proprietary — All rights reserved.
+MIT
